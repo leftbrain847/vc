@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cap Table</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:dark;--bg:#0f1218;--card:#171b24;--line:#232a38;--ink:#e9ecf2;--mute:#8e96a6;--co:#ff5a4e;--te:#2fc6b0;--go:#f2c14e}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 Archivo,system-ui,sans-serif;overflow-x:clip}
+#app{max-width:560px;margin:0 auto;padding:0 0 84px}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,g:focus-visible{outline:3px solid var(--go);outline-offset:2px}
+.top{display:flex;justify-content:space-between;align-items:center;padding:16px 16px 8px}
+h1{font-size:22px;margin:0;line-height:1.1}
+.k{color:var(--mute);font-size:13px;margin:2px 0 0}
+.mode{display:flex;background:var(--card);border-radius:22px;padding:3px}
+.mode button{border:0;background:none;padding:8px 12px;border-radius:18px;min-height:36px;color:var(--mute);font-weight:600}
+.mode .on{background:var(--line);color:var(--ink)}
+.ff{display:flex;justify-content:space-between;align-items:center;margin:0 16px 8px;padding:8px 12px;border:1px dashed var(--line);border-radius:12px;color:var(--mute);font-size:13px}
+.ff button{background:var(--go);color:#14161c;border:0;border-radius:10px;padding:8px 12px;font-weight:800;min-height:40px}
+.toast{margin:0 16px 8px;padding:10px 12px;border-radius:10px;background:rgba(255,90,78,.15);color:#ff9d94}
+main{padding:0 16px}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:6px 0 12px}
+.stats div{background:var(--card);border-radius:12px;padding:10px}
+.stats b{display:block;font-size:18px;font-variant-numeric:tabular-nums}
+.city{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;margin:0 -16px;padding:0 16px 4px}
+.district{flex:none;scroll-snap-align:end;border-radius:14px;overflow:hidden;background:#151a24;opacity:.82}
+.district.now{opacity:1;box-shadow:0 0 0 2px rgba(242,193,78,.5)}
+.district svg{display:block}
+.dlabel{padding:8px 12px;font-size:12px;font-weight:800;color:var(--mute)}
+.now .dlabel{color:var(--go)}
+.bld,.lot{cursor:pointer}
+.hint{color:var(--mute);font-size:13px;margin:8px 0}
+h2{font-size:15px;margin:14px 0 6px}.h{font-size:18px}
+.today{display:flex;flex-direction:column;gap:6px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px;background:var(--card);border:0;border-radius:12px;padding:12px;min-height:48px;text-align:left;width:100%}
+.row.alert{box-shadow:inset 0 0 0 1px rgba(255,90,78,.5)}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--co);margin-right:8px}
+.pill{font-size:12px;font-weight:700;padding:3px 9px;border-radius:10px;background:var(--line);white-space:nowrap}
+.pill.co{background:rgba(255,90,78,.18);color:#ff9d94}.pill.go{background:rgba(242,193,78,.16);color:var(--go)}
+.n{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap}
+.deal{background:var(--card);border-radius:16px;padding:14px;margin-bottom:10px}
+.deal.backed{box-shadow:inset 0 0 0 1px rgba(47,198,176,.5)}
+.deal header{display:flex;justify-content:space-between;gap:8px;margin-bottom:10px}
+.deal h3{margin:0;font-size:18px}.deal header p{margin:2px 0 0;color:var(--mute);font-size:13px}
+.heat{text-align:right;white-space:nowrap}.heat i{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--co);margin-left:3px}.heat small{display:block;color:var(--mute);font-size:11px}
+.trait{display:grid;grid-template-columns:96px minmax(0,1fr) 40px 56px;align-items:center;gap:8px;margin:7px 0}
+.tl{font-size:13px;font-weight:600}.tl small{display:block;color:var(--mute);font-weight:400;font-size:11px}
+.range{position:relative;height:10px;border-radius:5px;background:#232a38}
+.range i{position:absolute;top:0;bottom:0;border-radius:5px;background:rgba(242,193,78,.55)}
+.range i.sharp{background:var(--go)}
+.grade{font-weight:800;font-size:13px;text-align:center}
+.peek{border:1px dashed var(--go);background:none;color:var(--go);border-radius:10px;font-size:12px;font-weight:700;min-height:32px}
+.meta{color:var(--mute);font-size:13px;margin:8px 0}
+.buy{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.buy button{border:0;border-radius:12px;background:#232a38;padding:8px 2px;min-height:48px}
+.buy button b{display:block}.buy button small{color:var(--mute);font-size:11px}
+.buy button:disabled{opacity:.35;cursor:not-allowed}
+.buy .ghost{background:none;border:1px solid var(--line);color:var(--mute)}
+.held{font-weight:700;color:var(--te)}.held.muted{color:var(--mute)}
+.tbl{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.tbl th,.tbl td{padding:10px 6px;border-bottom:1px solid var(--line);text-align:left}
+.tbl th{color:var(--mute);font-size:12px;font-weight:600}.tbl .r{text-align:right}
+.tbl tr.you td{color:var(--go);font-weight:800}
+.tabs{position:fixed;left:0;right:0;bottom:0;display:flex;justify-content:center;background:#121620;border-top:1px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom))}
+.tabs button{flex:1;max-width:180px;border:0;background:none;color:var(--mute);font-weight:700;min-height:48px;border-radius:12px}
+.tabs .on{color:var(--ink);background:var(--card)}
+.sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.55)}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-width:560px;margin:0 auto;background:var(--card);border-radius:20px 20px 0 0;padding:18px 18px calc(22px + env(safe-area-inset-bottom));max-height:85vh;overflow:auto}
+.sheet h2{font-size:22px;margin:0}
+.x{position:absolute;right:12px;top:10px;border:0;background:var(--line);border-radius:50%;width:40px;height:40px;font-size:20px}
+.spark{display:block;margin:12px 0}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:6px 0 12px}.kv span{color:var(--mute)}.kv b{text-align:right;font-variant-numeric:tabular-nums}
+.offer{background:rgba(255,90,78,.1);border:1px solid rgba(255,90,78,.4);border-radius:12px;padding:12px;margin-bottom:10px}
+.offer button,.sell{display:block;width:100%;margin-top:10px;border:0;border-radius:12px;min-height:48px;font-weight:800}
+.offer button{background:var(--co);color:#fff}.sell{background:#232a38}.sell small{color:var(--mute);font-weight:400}
+@media(max-width:380px){.trait{grid-template-columns:82px minmax(0,1fr) 34px 50px}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+{
+// ---- src/config.mjs
+// Every tunable number in the game lives here, so balance can be changed without touching logic.
+const CONFIG = {
+  game_name: 'Cap Table',
+  time_zone: 'America/New_York',
+  epoch: '2026-11-23', // day 0 of the live world (a Monday)
+  world_seed: 'live-world-1',
+  practice_seed: 'practice-world',
+
+  season_days: 7, // stakes lock at the end of each season
+  fund_size: 10_000_000,
+  checks: { S: 250_000, M: 500_000, L: 1_000_000 },
+  pitches_per_day: 3,
+  deal_open_days: 2, // a pitch stays open this many days (never past its season's end)
+  peeks_per_day: 1,
+  sell_discount: 0.25, // selling a stake early returns value minus this share
+  followon_window_days: 2, // after a raise, how long you can pay to keep your stake (season open only)
+  round_dilution: 0.2, // each new round dilutes non-participating holders by this share
+
+  traits: ['founder', 'market', 'traction'],
+  scout: {
+    base_width: 0.5, // range width (0-1 scale) before any peek
+    peek_cut: 0.6, // a peek removes this share of the width
+    level_cut: 0.1, // each scouting level removes this share of the width
+    max_level: 3, // cap keeps veterans from running away with the game
+    calls_per_level: 3, // good calls needed per level
+    eval_lag_days: 14, // a call is judged this many days after it was made
+    good_multiple: 2, // a backed company at this multiple counts as a good call
+  },
+
+  sim: {
+    drift: 0.06, // daily log-growth for a perfect company, centred on quality 0.45
+    vol: 0.15,
+    raise_prob: 0.2,
+    raise_step: 1.3, // value must be this multiple of the last round to raise again
+    death_floor: 0.55,
+    death_prob: 0.3,
+    exit_min_multiple: 3,
+    exit_prob: 0.07,
+    mature_day: 40,
+    mature_exit_prob: 0.03,
+    quality_weights: { founder: 0.45, market: 0.35, traction: 0.2 },
+    luck: 0.18, // hidden noise in quality, so even perfect scouting isn't certainty
+  },
+
+  rivals: [
+    { name: 'Marlow Capital', style: 'aggressive' },
+    { name: 'Bright Pine', style: 'balanced' },
+    { name: 'Ostrich Fund', style: 'conservative' },
+    { name: 'Lowtide Ventures', style: 'balanced' },
+    { name: 'Kettle Partners', style: 'spray' },
+    { name: 'Fable & Co', style: 'contrarian' },
+  ],
+  rival_styles: {
+    aggressive: { bar: 0.5, size: 'L', followon: true },
+    balanced: { bar: 0.56, size: 'M', followon: true },
+    conservative: { bar: 0.64, size: 'M', followon: false },
+    spray: { bar: 0.4, size: 'S', followon: false },
+    contrarian: { bar: 0.35, size: 'M', followon: true, invert: true },
+  },
+};
+
+// ---- src/world.mjs
+// The shared world: every player with the same seed sees the same companies, on the same days, with the same fates.
+// Pure and deterministic: no clock, no Math.random.
+
+function hash(str) {
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < str.length; i++) h = Math.imul(h ^ str.charCodeAt(i), 16777619) >>> 0;
+  return h >>> 0;
+}
+function rand(...parts) {
+  let t = (hash(parts.join('|')) + 0x6d2b79f5) >>> 0;
+  t = Math.imul(t ^ (t >>> 15), t | 1);
+  t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+}
+function gauss(...parts) {
+  const u = Math.max(1e-9, rand(...parts, 'a'));
+  const v = rand(...parts, 'b');
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+const clamp01 = (x) => Math.min(1, Math.max(0, x));
+
+const seasonOf = (day, cfg = CONFIG) => Math.floor(day / cfg.season_days);
+const seasonStart = (season, cfg = CONFIG) => season * cfg.season_days;
+const seasonEnd = (season, cfg = CONFIG) => seasonStart(season, cfg) + cfg.season_days - 1;
+
+const NAME_A = ['Kest', 'Salt', 'Nim', 'Juni', 'Brin', 'Ledg', 'Quor', 'Pant', 'Moss', 'Tide', 'Ferr', 'Orb', 'Lum', 'Hale', 'Corv', 'Vela', 'Rook', 'Fen', 'Arbo', 'Quill', 'Lark', 'Cinder', 'Mar', 'Opal'];
+const NAME_B = ['rel', 'box', 'bus', 'per', 'e', 'erline', 'um', 'ry', 'work', 'well', 'o', 'it', 'en', 'ly', 'ix', 'ra', 'stack', 'ward', 'labs', 'grid', 'field', 'path', 'loop', 'yard'];
+const SECTORS = ['Drone insurance', 'Ghost kitchens', 'Weather hedges', 'Pet telehealth', 'Battery recycling', 'AP automation', 'Board meeting AI', 'Grocery for clinics', 'Robot lawn care', 'Water rights data', 'Steel recycling', 'Freight matching', 'Dental billing', 'Solar permits', 'Tutor marketplace', 'Crop sensors', 'Legal intake AI', 'Fleet charging', 'Clinic scheduling', 'Warehouse robots'];
+const FIRST = ['Ana', 'Dev', 'Kay', 'Sam', 'Ri', 'Lena', 'Omar', 'Priya', 'Theo', 'Mara', 'Jun', 'Nia', 'Ezra', 'Ines', 'Cole', 'Wren'];
+
+function pitchesForDay(seed, day, cfg = CONFIG) {
+  const out = [];
+  for (let i = 0; i < cfg.pitches_per_day; i++) {
+    const id = `${day}-${i}`;
+    const r = (k) => rand(seed, 'co', id, k);
+    const founder = r('f');
+    const market = r('m');
+    const traction = r('t');
+    const w = cfg.sim.quality_weights;
+    const quality = clamp01(w.founder * founder + w.market * market + w.traction * traction + cfg.sim.luck * gauss(seed, 'co', id, 'luck'));
+    const heat = Math.round(r('heat') * 2 + (founder + traction) * 1.5);
+    const pre = Math.round((6 + 14 * traction + 4 * r('pre')) * (1 + 0.15 * heat)) * 1_000_000;
+    out.push({
+      id, born: day,
+      name: NAME_A[Math.floor(r('n1') * NAME_A.length)] + NAME_B[Math.floor(r('n2') * NAME_B.length)],
+      sector: SECTORS[Math.floor(r('s') * SECTORS.length)],
+      founder_name: FIRST[Math.floor(r('fn') * FIRST.length)],
+      revenue_k: Math.round(5 + 120 * traction * traction),
+      traits: { founder, market, traction },
+      quality,
+      post: pre * 1.25,
+    });
+  }
+  return out;
+}
+
+const pathCache = new Map();
+// Day-by-day value of a company from birth to `day`. Each entry: { day, value, status, raised, exitValue }.
+function companyPath(seed, co, day, cfg = CONFIG) {
+  const key = `${seed}|${co.id}`;
+  let path = pathCache.get(key);
+  if (!path) {
+    path = [{ day: co.born, value: co.post, status: 'alive', raised: false, lastRound: co.post }];
+    pathCache.set(key, path);
+  }
+  const s = cfg.sim;
+  while (path[path.length - 1].day < day) {
+    const prev = path[path.length - 1];
+    const d = prev.day + 1;
+    if (prev.status !== 'alive') { path.push({ ...prev, day: d, raised: false }); continue; }
+    const g = s.drift * 2 * (co.quality - 0.45) + s.vol * gauss(seed, 'path', co.id, d);
+    const value = prev.value * Math.exp(g);
+    const age = d - co.born;
+    const r = (k) => rand(seed, 'ev', co.id, d, k);
+    let status = 'alive', raised = false, lastRound = prev.lastRound, exitValue;
+    if (value < s.death_floor * co.post && r('death') < s.death_prob) status = 'dead';
+    else if ((value >= s.exit_min_multiple * co.post && r('exit') < s.exit_prob) || (age >= s.mature_day && r('mature') < s.mature_exit_prob)) {
+      status = 'exited'; exitValue = value;
+    } else if (value >= s.raise_step * prev.lastRound && r('raise') < s.raise_prob) {
+      raised = true; lastRound = value;
+    }
+    path.push({ day: d, value, status, raised, lastRound, exitValue });
+  }
+  // The cache may run ahead of `day`; never hand out the future.
+  return path.slice(0, Math.max(0, day - co.born + 1));
+}
+const stateAt = (seed, co, day, cfg = CONFIG) => companyPath(seed, co, day, cfg).find((p) => p.day === day);
+
+// Deals a player can still back on `day`: born within the open window and inside the current season.
+function openDeals(seed, day, cfg = CONFIG) {
+  const season = seasonOf(day, cfg);
+  const out = [];
+  for (let b = Math.max(seasonStart(season, cfg), day - cfg.deal_open_days + 1); b <= day; b++) {
+    for (const co of pitchesForDay(seed, b, cfg)) if (stateAt(seed, co, day, cfg).status === 'alive') out.push(co);
+  }
+  return out;
+}
+const companyById = (seed, id, cfg = CONFIG) => pitchesForDay(seed, Number(id.split('-')[0]), cfg).find((c) => c.id === id);
+
+// What a scout sees of a hidden 0-1 trait: a range of the given width that always contains the truth.
+function observe(seed, co, trait, width) {
+  const v = co.traits[trait];
+  const u = rand(seed, 'obs', co.id, trait);
+  let lo = v - width * u, hi = v + width * (1 - u);
+  if (lo < 0) { hi -= lo; lo = 0; }
+  if (hi > 1) { lo -= hi - 1; hi = 1; }
+  return { lo: clamp01(lo), hi: clamp01(hi) };
+}
+const GRADES = ['F', 'D', 'C', 'B', 'A'];
+const grade = (x) => GRADES[Math.min(4, Math.floor(x * 5))];
+
+// ---- src/game.mjs
+// Player rules: funds per season, investing, peeking, following on, selling, scouting and standings.
+// Pure functions over a plain state object, so the same code runs the player, the rivals and the tests.
+
+const newFirm = (name) => ({ name, funds: {}, peeks: {}, revealed: {}, passed: {} });
+
+function fund(firm, season, cfg = CONFIG) {
+  if (!firm.funds[season]) firm.funds[season] = { cash: cfg.fund_size, holdings: [] };
+  return firm.funds[season];
+}
+const holdingOf = (firm, coId) => {
+  for (const f of Object.values(firm.funds)) { const h = f.holdings.find((x) => x.coId === coId); if (h) return h; }
+  return null;
+};
+const isLocked = (season, day, cfg = CONFIG) => day > seasonEnd(season, cfg);
+
+function invest(firm, seed, day, coId, size, cfg = CONFIG) {
+  const amount = cfg.checks[size];
+  if (!amount) throw new Error(`unknown check size ${size}`);
+  if (!openDeals(seed, day, cfg).some((c) => c.id === coId)) throw new Error('this deal is closed');
+  if (holdingOf(firm, coId)) throw new Error('you already backed this company');
+  const f = fund(firm, seasonOf(day, cfg), cfg);
+  if (f.cash < amount) throw new Error('not enough cash left in this fund');
+  const co = companyById(seed, coId, cfg);
+  const value = stateAt(seed, co, day, cfg).value;
+  f.cash -= amount;
+  f.holdings.push({ coId, invested: amount, stake: amount / value, day, protectedRaises: [], sold: null });
+  return f.holdings[f.holdings.length - 1];
+}
+
+// Raises after purchase that the holder didn't pay to follow.
+function stakeAt(h, seed, day, cfg = CONFIG) {
+  const co = companyById(seed, h.coId, cfg);
+  let stake = h.stake;
+  for (const p of companyPath(seed, co, day, cfg)) if (p.raised && p.day > h.day && !h.protectedRaises.includes(p.day)) stake *= 1 - cfg.round_dilution;
+  return stake;
+}
+
+function followOnOffer(firm, seed, day, coId, cfg = CONFIG) {
+  const h = holdingOf(firm, coId);
+  if (!h || h.sold) return null;
+  const season = seasonOf(h.day, cfg);
+  if (isLocked(season, day, cfg)) return null;
+  const co = companyById(seed, coId, cfg);
+  const path = companyPath(seed, co, day, cfg);
+  const raise = [...path].reverse().find((p) => p.raised && p.day > h.day && day - p.day < cfg.followon_window_days);
+  if (!raise || h.protectedRaises.includes(raise.day) || path[path.length - 1].status !== 'alive') return null;
+  const cost = stakeAt(h, seed, raise.day - 1, cfg) * cfg.round_dilution * raise.value;
+  return { raiseDay: raise.day, cost, keep: stakeAt(h, seed, raise.day - 1, cfg), diluted: stakeAt(h, seed, raise.day - 1, cfg) * (1 - cfg.round_dilution) };
+}
+
+function followOn(firm, seed, day, coId, cfg = CONFIG) {
+  const offer = followOnOffer(firm, seed, day, coId, cfg);
+  if (!offer) throw new Error('no follow-on available');
+  const h = holdingOf(firm, coId);
+  const f = fund(firm, seasonOf(h.day, cfg), cfg);
+  if (f.cash < offer.cost) throw new Error('not enough cash left in this fund');
+  f.cash -= offer.cost;
+  h.invested += offer.cost;
+  h.protectedRaises.push(offer.raiseDay);
+  return offer;
+}
+
+// Current worth of a holding to its fund: realised cash for exits and sales, a mark for live companies.
+function holdingValue(h, seed, day, cfg = CONFIG) {
+  if (h.sold && h.sold.day <= day) return { value: h.sold.proceeds, status: 'sold' };
+  const co = companyById(seed, h.coId, cfg);
+  const st = stateAt(seed, co, day, cfg);
+  const stake = stakeAt(h, seed, day, cfg);
+  if (st.status === 'dead') return { value: 0, status: 'dead' };
+  if (st.status === 'exited') return { value: stake * st.exitValue, status: 'exited' };
+  return { value: stake * st.value, status: 'alive' };
+}
+
+function sell(firm, seed, day, coId, cfg = CONFIG) {
+  const h = holdingOf(firm, coId);
+  if (!h || h.sold) throw new Error('nothing to sell');
+  const hv = holdingValue(h, seed, day, cfg);
+  if (hv.status !== 'alive') throw new Error('this company is no longer trading');
+  const proceeds = hv.value * (1 - cfg.sell_discount);
+  h.sold = { day, proceeds };
+  return proceeds;
+}
+
+function fundValue(firm, season, seed, day, cfg = CONFIG) {
+  const f = fund(firm, season, cfg);
+  let total = f.cash;
+  for (const h of f.holdings) if (h.day <= day) total += holdingValue(h, seed, day, cfg).value;
+  return { total, multiple: total / cfg.fund_size };
+}
+
+// Scouting: a range narrows when you peek, and narrows further with a level earned from good calls.
+function scoutLevel(firm, seed, day, cfg = CONFIG) {
+  const sc = cfg.scout;
+  let good = 0;
+  for (const f of Object.values(firm.funds)) for (const h of f.holdings) {
+    const judge = h.day + sc.eval_lag_days;
+    if (judge > day) continue;
+    const co = companyById(seed, h.coId, cfg);
+    const st = stateAt(seed, co, judge, cfg);
+    const v = st.status === 'exited' ? st.exitValue : st.status === 'dead' ? 0 : st.value;
+    if (v / stateAt(seed, co, h.day, cfg).value >= sc.good_multiple) good++;
+  }
+  for (const [coId, d] of Object.entries(firm.passed)) {
+    if (d + sc.eval_lag_days > day) continue;
+    if (stateAt(seed, companyById(seed, coId, cfg), d + sc.eval_lag_days, cfg).status === 'dead') good++;
+  }
+  return { level: Math.min(sc.max_level, Math.floor(good / sc.calls_per_level)), good };
+}
+
+function widthFor(firm, seed, day, coId, trait, cfg = CONFIG) {
+  const sc = cfg.scout;
+  let w = sc.base_width * (1 - sc.level_cut * scoutLevel(firm, seed, day, cfg).level);
+  if (firm.revealed[coId]?.includes(trait)) w *= 1 - sc.peek_cut;
+  return w;
+}
+const view = (firm, seed, day, co, trait, cfg = CONFIG) => observe(seed, co, trait, widthFor(firm, seed, day, co.id, trait, cfg));
+
+const peeksLeft = (firm, day, cfg = CONFIG) => cfg.peeks_per_day - (firm.peeks[day] || 0);
+function peek(firm, seed, day, coId, trait, cfg = CONFIG) {
+  if (!cfg.traits.includes(trait)) throw new Error(`unknown trait ${trait}`);
+  if (peeksLeft(firm, day, cfg) <= 0) throw new Error('no peeks left today');
+  if (firm.revealed[coId]?.includes(trait)) throw new Error('already peeked');
+  firm.peeks[day] = (firm.peeks[day] || 0) + 1;
+  (firm.revealed[coId] ||= []).push(trait);
+  return view(firm, seed, day, companyById(seed, coId, cfg), trait, cfg);
+}
+const pass = (firm, day, coId) => { firm.passed[coId] = day; };
+
+// Rival firms play the same world with simple styles and no peeks.
+function rivalScore(seed, co, cfg = CONFIG) {
+  const w = cfg.sim.quality_weights;
+  let s = 0;
+  for (const t of cfg.traits) { const r = observe(seed, co, t, cfg.scout.base_width); s += w[t] * (r.lo + r.hi) / 2; }
+  return s;
+}
+function simulateRival(rival, seed, day, cfg = CONFIG) {
+  const style = cfg.rival_styles[rival.style];
+  const firm = newFirm(rival.name);
+  for (let d = 0; d <= day; d++) {
+    for (const co of pitchesForDay(seed, d, cfg)) {
+      const s = rivalScore(seed, co, cfg);
+      const keen = style.invert ? s < style.bar : s >= style.bar;
+      if (keen) { try { invest(firm, seed, d, co.id, style.size, cfg); } catch { /* out of cash or closed */ } }
+    }
+    if (style.followon) for (const f of Object.values(firm.funds)) for (const h of f.holdings) {
+      try { followOn(firm, seed, d, h.coId, cfg); } catch { /* no offer */ }
+    }
+  }
+  return firm;
+}
+
+// How many rival firms backed (or will back by its close) a deal: shown as "firms circling".
+function heat(seed, co, cfg = CONFIG) {
+  const s = rivalScore(seed, co, cfg);
+  return cfg.rivals.filter((r) => { const st = cfg.rival_styles[r.style]; return st.invert ? s < st.bar : s >= st.bar; }).length;
+}
+
+function standings(player, seed, day, cfg = CONFIG) {
+  const season = seasonOf(day, cfg);
+  const firms = [player, ...cfg.rivals.map((r) => simulateRival(r, seed, day, cfg))];
+  return firms.map((f) => {
+    const seasons = [];
+    for (let s = 0; s <= season; s++) seasons.push(fundValue(f, s, seed, day, cfg).multiple);
+    return { name: f.name, you: f === player, multiple: seasons[season], career: seasons.reduce((a, b) => a + b, 0) / seasons.length };
+  }).sort((a, b) => b.multiple - a.multiple);
+}
+
+const dayFromDate = (now, cfg = CONFIG) => {
+  const local = new Intl.DateTimeFormat('en-CA', { timeZone: cfg.time_zone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
+  return Math.max(0, Math.round((Date.parse(`${local}T00:00:00Z`) - Date.parse(`${cfg.epoch}T00:00:00Z`)) / 86_400_000));
+};
+
+// ---- src/ui.js
+// Browser UI. Runs after config, world and game are inlined above it by scripts/build.mjs.
+const STORE_KEY = 'cap_table_v1';
+const App = {
+  mode: 'practice',
+  practiceDay: 0,
+  firms: {},
+  tab: 'city',
+  sheet: null,
+  toast: '',
+};
+const seedFor = () => (App.mode === 'live' ? CONFIG.world_seed : CONFIG.practice_seed);
+const today = () => (App.mode === 'live' ? dayFromDate(new Date()) : App.practiceDay);
+const me = () => (App.firms[App.mode] ||= newFirm('You'));
+
+function load() {
+  try {
+    const s = JSON.parse(localStorage.getItem(STORE_KEY) || 'null');
+    if (s) Object.assign(App, { mode: s.mode || 'practice', practiceDay: s.practiceDay || 0, firms: s.firms || {} });
+  } catch { /* storage unavailable: play in memory */ }
+}
+function save() {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify({ mode: App.mode, practiceDay: App.practiceDay, firms: App.firms })); } catch { /* ignore */ }
+}
+
+const money = (n) => (Math.abs(n) >= 1e6 ? `$${(n / 1e6).toFixed(n >= 1e7 ? 0 : 1)}M` : `$${Math.round(n / 1e3)}K`);
+const pct = (x) => `${(x * 100).toFixed(x < 0.1 ? 1 : 0)}%`;
+const mult = (x) => `${x.toFixed(2)}x`;
+const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
+const fundName = (s) => `Fund ${ROMAN[s] || s + 1}`;
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const hue = (id) => ['#2a8f84', '#334262', '#5f7ab7', '#6b5a8a', '#2c7d73', '#3a4a6a', '#7a5a8f', '#2f6f8f'][hash(id) % 8];
+
+function act(fn) {
+  try { fn(); App.toast = ''; } catch (e) { App.toast = e.message; }
+  save(); render();
+}
+
+/* ---------- City ---------- */
+function building(h, x, ground, seed, day) {
+  const co = companyById(seed, h.coId);
+  const hv = holdingValue(h, seed, day);
+  const m = hv.value / h.invested;
+  const w = Math.round(20 + Math.min(18, (h.invested / 1e6) * 14));
+  const ht = Math.round(Math.min(200, 40 + 60 * Math.log2(1 + Math.max(0.1, m))));
+  const y = ground - ht;
+  let s = `<g class="bld" data-co="${h.coId}" tabindex="0" role="button" aria-label="${esc(co.name)}">`;
+  if (hv.status === 'dead') {
+    s += `<path d="M${x} ${ground} L${x} ${ground - 18} L${x + w * 0.4} ${ground - 10} L${x + w * 0.7} ${ground - 22} L${x + w} ${ground - 8} L${x + w} ${ground}Z" fill="#3a3f4b"/>`;
+  } else if (hv.status === 'sold') {
+    s += `<rect x="${x}" y="${ground - 16}" width="${w}" height="16" fill="#4a505e"/><rect x="${x + 3}" y="${ground - 28}" width="${w - 6}" height="10" rx="2" fill="#e9ecf2"/><text x="${x + w / 2}" y="${ground - 20}" font-size="7" text-anchor="middle" font-weight="800" fill="#14161c">SOLD</text>`;
+  } else {
+    s += `<rect x="${x}" y="${y}" width="${w}" height="${ht}" fill="${hue(h.coId)}"/><rect x="${x + w - 5}" y="${y}" width="5" height="${ht}" fill="#000" opacity=".2"/>`;
+    const cols = Math.max(1, Math.floor((w - 6) / 8));
+    for (let r = 0; r < Math.floor((ht - 8) / 12); r++) for (let k = 0; k < cols; k++) {
+      const on = (hash(h.coId + r + '-' + k) % 10) / 10 < Math.min(0.95, 0.25 + m / 3);
+      s += `<rect x="${x + 4 + k * 8}" y="${y + 5 + r * 12}" width="4" height="6" fill="${on ? '#ffd877' : '#1a2030'}"/>`;
+    }
+    if (hv.status === 'exited') s += `<path d="M${x - 3} ${y} L${x + w / 2} ${y - 18} L${x + w + 3} ${y}Z" fill="#f2c14e"/>`;
+    if (followOnOffer(me(), seed, day, h.coId)) s += `<circle cx="${x + w / 2}" cy="${y - 10}" r="4" fill="#ff5a4e"/><circle cx="${x + w / 2}" cy="${y - 10}" r="10" fill="#ff5a4e" opacity=".25"/>`;
+  }
+  s += `<text x="${x + w / 2}" y="${ground + 14}" font-size="8" text-anchor="middle" fill="#9aa1ad">${esc(co.name.slice(0, 7))}</text></g>`;
+  return { svg: s, w };
+}
+
+function district(season, seed, day) {
+  const firm = me();
+  const f = fund(firm, season);
+  const live = !isLocked(season, day);
+  const ground = 250;
+  let x = 10, parts = '';
+  for (const h of f.holdings) { const b = building(h, x, ground, seed, day); parts += b.svg; x += b.w + 8; }
+  if (live) for (const co of openDeals(seed, day)) {
+    if (f.holdings.some((h) => h.coId === co.id)) continue;
+    parts += `<g class="lot" data-tab="deals" role="button" tabindex="0" aria-label="Open deal ${esc(co.name)}"><rect x="${x}" y="${ground - 14}" width="26" height="14" fill="none" stroke="#f2c14e" stroke-dasharray="3 3"/><path d="M${x + 4} ${ground - 14} L${x + 4} ${ground - 60} L${x + 34} ${ground - 60}" stroke="#f2c14e" stroke-width="2" fill="none"/><path d="M${x + 28} ${ground - 60} L${x + 28} ${ground - 48}" stroke="#f2c14e"/></g>`;
+    x += 42;
+  }
+  const width = Math.max(340, x + 10);
+  const fv = fundValue(firm, season, seed, day);
+  const label = live ? `${fundName(season)} · open · ${mult(fv.multiple)}` : `${fundName(season)} · locked · ${mult(fv.multiple)}`;
+  const empty = !f.holdings.length && !live ? `<text x="150" y="200" font-size="11" text-anchor="middle" fill="#8e96a6">No companies backed this season</text>` : '';
+  return `<div class="district${live ? ' now' : ''}" data-season="${season}"><svg viewBox="0 0 ${width} 280" width="${width}" height="280"><defs><linearGradient id="sky${season}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${live ? '#2a2440' : '#1a2236'}"/><stop offset="1" stop-color="${live ? '#e07a5f' : '#3a3f5a'}"/></linearGradient></defs><rect width="${width}" height="${ground}" fill="url(#sky${season})"/>${live ? `<circle cx="${width - 50}" cy="70" r="18" fill="#ffd877" opacity=".85"/>` : ''}${parts}${empty}<rect y="${ground}" width="${width}" height="30" fill="#151a24"/></svg><div class="dlabel">${label}</div></div>`;
+}
+
+function cityView(seed, day) {
+  const season = seasonOf(day);
+  const firm = me();
+  const st = standings(firm, seed, day);
+  const rank = st.findIndex((r) => r.you) + 1;
+  const f = fund(firm, season);
+  const left = seasonEnd(season) - day;
+  const offers = [];
+  for (const s of Object.keys(firm.funds)) for (const h of firm.funds[s].holdings) { const o = followOnOffer(firm, seed, day, h.coId); if (o) offers.push([h, o]); }
+  const events = [];
+  for (const s of Object.keys(firm.funds)) for (const h of firm.funds[s].holdings) {
+    if (h.sold || h.day >= day) continue;
+    const a = holdingValue(h, seed, day - 1).status, b = holdingValue(h, seed, day).status;
+    if (a !== b) events.push([h, b]);
+  }
+  const deals = openDeals(seed, day).filter((c) => !f.holdings.some((h) => h.coId === c.id)).length;
+  let districts = '';
+  for (let s = 0; s <= season; s++) districts += district(s, seed, day);
+  return `<section class="stats"><div><span class="k">This fund</span><b>${mult(fundValue(firm, season, seed, day).multiple)}</b></div><div><span class="k">Rank</span><b>#${rank} of ${st.length}</b></div><div><span class="k">Cash</span><b>${money(f.cash)}</b></div></section>
+  <div class="city" id="city">${districts}</div>
+  <p class="hint">${season > 0 ? 'Swipe right to stroll back through older funds. ' : ''}Tap a building to see the company.</p>
+  <section class="today"><h2>Today</h2>
+  ${offers.map(([h, o]) => `<button class="row alert" data-co="${h.coId}"><span><i class="dot"></i>${esc(companyById(seed, h.coId).name)} is raising</span><span class="pill co">keep your stake?</span></button>`).join('')}
+  ${events.map(([h, s]) => `<button class="row" data-co="${h.coId}"><span>${esc(companyById(seed, h.coId).name)} ${s === 'exited' ? 'was acquired' : 'shut down'}</span><span class="pill ${s === 'exited' ? 'go' : 'co'}">${s === 'exited' ? 'exit' : 'failed'}</span></button>`).join('')}
+  <button class="row" data-tab="deals"><span>${deals} deal${deals === 1 ? '' : 's'} open in Deal Flow</span><span class="pill go">Review</span></button>
+  <div class="row static"><span>Stakes in ${fundName(season)} lock</span><span class="n">${left === 0 ? 'tonight' : `in ${left} day${left === 1 ? '' : 's'}`}</span></div></section>`;
+}
+
+/* ---------- Deal Flow ---------- */
+function rangeBar(r, peeked) {
+  return `<div class="range"><i style="left:${r.lo * 100}%;width:${Math.max(3, (r.hi - r.lo) * 100)}%" class="${peeked ? 'sharp' : ''}"></i></div><span class="grade">${grade(r.lo)}${grade(r.lo) === grade(Math.min(0.999, r.hi)) ? '' : '–' + grade(Math.min(0.999, r.hi))}</span>`;
+}
+function dealsView(seed, day) {
+  const firm = me();
+  const season = seasonOf(day);
+  const f = fund(firm, season);
+  const lvl = scoutLevel(firm, seed, day);
+  const deals = openDeals(seed, day);
+  const peeks = peeksLeft(firm, day);
+  const cards = deals.map((co) => {
+    const held = f.holdings.find((h) => h.coId === co.id);
+    const value = stateAt(seed, co, day).value;
+    const closes = Math.min(co.born + CONFIG.deal_open_days - 1, seasonEnd(season)) - day;
+    const ht = heat(seed, co);
+    const traits = CONFIG.traits.map((t) => {
+      const peeked = firm.revealed[co.id]?.includes(t);
+      const r = view(firm, seed, day, co, t);
+      const label = t === 'traction' ? `Traction <small>~$${Math.round(5 + 120 * r.lo * r.lo)}–${Math.round(5 + 120 * r.hi * r.hi)}K/mo</small>` : t[0].toUpperCase() + t.slice(1);
+      return `<div class="trait"><span class="tl">${label}</span>${rangeBar(r, peeked)}${!peeked && !held && peeks > 0 ? `<button class="peek" data-peek="${co.id}|${t}">Peek</button>` : '<span class="peek-sp"></span>'}</div>`;
+    }).join('');
+    const buy = held
+      ? `<div class="held">Backed ${money(held.invested)} · ${pct(held.stake)}</div>`
+      : firm.passed[co.id] !== undefined
+        ? `<div class="held muted">Passed</div>`
+        : `<div class="buy">${Object.entries(CONFIG.checks).map(([k, a]) => `<button data-invest="${co.id}|${k}" ${f.cash < a ? 'disabled' : ''}><b>${money(a)}</b><small>${pct(a / value)}</small></button>`).join('')}<button class="ghost" data-pass="${co.id}">Pass</button></div>`;
+    return `<article class="deal${held ? ' backed' : ''}"><header><div><h3>${esc(co.name)}</h3><p>${esc(co.sector)} · ${esc(co.founder_name)}, founder</p></div><div class="heat" title="Rival firms interested">${'<i></i>'.repeat(Math.min(5, ht))}<small>${ht} firm${ht === 1 ? '' : 's'}</small></div></header>
+      ${traits}<p class="meta">Valued at ${money(value)} · closes ${closes === 0 ? 'tonight' : `in ${closes} day${closes === 1 ? '' : 's'}`}</p>${buy}</article>`;
+  }).join('');
+  return `<section class="stats"><div><span class="k">Peeks today</span><b>${peeks}</b></div><div><span class="k">Scouting</span><b>Lv ${lvl.level}</b></div><div><span class="k">Cash</span><b>${money(f.cash)}</b></div></section>
+  <p class="hint">Ranges always contain the truth. A peek narrows one; scouting levels narrow all of them, earned by good calls (max level ${CONFIG.scout.max_level}).</p>
+  ${cards || '<p class="hint">No open deals right now.</p>'}`;
+}
+
+/* ---------- Standings ---------- */
+function standingsView(seed, day) {
+  const season = seasonOf(day);
+  const st = standings(me(), seed, day);
+  return `<h2 class="h">${fundName(season)} standings</h2><p class="hint">Every firm saw the same deals. Season ends in ${seasonEnd(season) - day + 1} day(s).</p>
+  <table class="tbl"><thead><tr><th>#</th><th>Firm</th><th class="r">Fund</th><th class="r">Career</th></tr></thead><tbody>${st.map((r, i) => `<tr class="${r.you ? 'you' : ''}"><td>${i + 1}</td><td>${esc(r.name)}</td><td class="r">${mult(r.multiple)}</td><td class="r">${mult(r.career)}</td></tr>`).join('')}</tbody></table>`;
+}
+
+/* ---------- Company sheet ---------- */
+function sheetView(seed, day, coId) {
+  const firm = me();
+  const co = companyById(seed, coId);
+  const h = Object.values(firm.funds).flatMap((f) => f.holdings).find((x) => x.coId === coId);
+  const path = companyPath(seed, co, day).filter((p) => p.day >= (h ? h.day : co.born));
+  const vals = path.map((p) => (p.status === 'exited' ? p.exitValue : p.status === 'dead' ? 0 : p.value));
+  const mx = Math.max(...vals, 1), W = 260, H = 70;
+  const pts = vals.map((v, i) => `${(vals.length === 1 ? 0 : (i / (vals.length - 1)) * W).toFixed(1)},${(H - 4 - (v / mx) * (H - 8)).toFixed(1)}`).join(' ');
+  const hv = h ? holdingValue(h, seed, day) : null;
+  const offer = h ? followOnOffer(firm, seed, day, coId) : null;
+  const locked = h ? isLocked(seasonOf(h.day), day) : false;
+  const raises = path.filter((p) => p.raised).length;
+  return `<div class="sheet-bg" data-close="1"></div><div class="sheet" role="dialog" aria-label="${esc(co.name)}"><button class="x" data-close="1" aria-label="Close">×</button>
+  <h2>${esc(co.name)}</h2><p class="k">${esc(co.sector)} · ${esc(co.founder_name)}, founder · ${h ? fundName(seasonOf(h.day)) : ''}</p>
+  <svg class="spark" viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="none"><polyline points="${pts}" fill="none" stroke="${hv && hv.value < h.invested ? '#ff5a4e' : '#2fc6b0'}" stroke-width="2.5"/></svg>
+  ${h ? `<div class="kv"><span>Invested</span><b>${money(h.invested)}</b><span>Stake now</span><b>${pct(stakeAt(h, seed, day))}</b><span>Worth</span><b>${money(hv.value)} · ${mult(hv.value / h.invested)}</b><span>Status</span><b>${hv.status}${raises ? ` · ${raises} raise${raises > 1 ? 's' : ''}` : ''}</b></div>` : ''}
+  ${offer ? `<div class="offer"><b>Raising now.</b> Pay ${money(offer.cost)} to keep ${pct(offer.keep)}, or do nothing and drop to ${pct(offer.diluted)}.<button data-follow="${coId}">Keep my stake · ${money(offer.cost)}</button></div>` : ''}
+  ${h && hv.status === 'alive' ? `<button class="sell" data-sell="${coId}">Sell now for ${money(hv.value * (1 - CONFIG.sell_discount))} <small>(${pct(CONFIG.sell_discount)} below value)</small></button>` : ''}
+  <p class="hint">${locked ? 'This fund is locked: no new money. It plays out on its own; you can sell any time.' : 'Stakes lock when the season ends. After that you only watch, or sell.'}</p></div>`;
+}
+
+/* ---------- Shell ---------- */
+function render() {
+  const seed = seedFor(), day = today();
+  const season = seasonOf(day);
+  const body = App.tab === 'city' ? cityView(seed, day) : App.tab === 'deals' ? dealsView(seed, day) : standingsView(seed, day);
+  document.getElementById('app').innerHTML = `<header class="top"><div><h1>${CONFIG.game_name}</h1><p class="k">Season ${season + 1} · Day ${day - seasonStart(season) + 1} of ${CONFIG.season_days}</p></div>
+    <div class="mode"><button data-mode="practice" class="${App.mode === 'practice' ? 'on' : ''}">Practice</button><button data-mode="live" class="${App.mode === 'live' ? 'on' : ''}">Live</button></div></header>
+    ${App.mode === 'practice' ? `<div class="ff"><span>Practice world: move time yourself.</span><button data-next="1">Next day ›</button></div>` : ''}
+    ${App.toast ? `<div class="toast" role="status">${esc(App.toast)}</div>` : ''}
+    <main>${body}</main>
+    <nav class="tabs">${[['city', 'City'], ['deals', 'Deal Flow'], ['standings', 'Standings']].map(([k, l]) => `<button data-tab="${k}" class="${App.tab === k ? 'on' : ''}">${l}</button>`).join('')}</nav>
+    ${App.sheet ? sheetView(seed, day, App.sheet) : ''}`;
+  const city = document.getElementById('city');
+  if (city) city.scrollLeft = city.scrollWidth;
+}
+
+document.addEventListener('click', (e) => {
+  const t = e.target.closest('button, [data-co], [data-tab]');
+  if (!t) return;
+  const seed = seedFor(), day = today(), d = t.dataset;
+  if (d.close) { App.sheet = null; return render(); }
+  if (d.tab) { App.tab = d.tab; App.sheet = null; return render(); }
+  if (d.mode) { App.mode = d.mode; App.sheet = null; save(); return render(); }
+  if (d.next) { App.practiceDay++; save(); return render(); }
+  if (d.peek) { const [id, tr] = d.peek.split('|'); return act(() => peek(me(), seed, day, id, tr)); }
+  if (d.invest) { const [id, k] = d.invest.split('|'); return act(() => invest(me(), seed, day, id, k)); }
+  if (d.pass) return act(() => pass(me(), day, d.pass));
+  if (d.follow) return act(() => followOn(me(), seed, day, d.follow));
+  if (d.sell) return act(() => { sell(me(), seed, day, d.sell); App.sheet = null; });
+  if (d.co) { App.sheet = d.co; return render(); }
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && App.sheet) { App.sheet = null; render(); }
+  if (e.key === 'Enter' && e.target.matches('g[data-co], g[data-tab]')) e.target.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+});
+load();
+render();
+
+}
+</script>
+</body>
+</html>

@@ -25,3 +25,6 @@ Thumbs.db
 
 # Claude Code
 .claude/worktrees/
+
+# Build output (rebuilt by npm run build)
+dist/
